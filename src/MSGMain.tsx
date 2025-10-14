@@ -26,18 +26,31 @@ const MSGMain1545x960 = () => {
 
     useEffect(() => {
         const fetchOdds = async () => {
+            console.log('[ODDS] Fetching latest odds...');
             const [cuomoOdds, mamdaniOdds] = await Promise.all([
                 fetchMarketOdds(CUOMO_MARKET_TICKER),
                 fetchMarketOdds(MAMDANI_MARKET_TICKER)
             ]);
 
-            if (cuomoOdds !== null) setCuomo(cuomoOdds);
-            if (mamdaniOdds !== null) setMamdani(mamdaniOdds);
+            console.log('[ODDS] Received - Cuomo:', cuomoOdds, 'Mamdani:', mamdaniOdds);
+
+            if (cuomoOdds !== null) {
+                setCuomo(cuomoOdds);
+                console.log('[ODDS] Updated Cuomo to:', cuomoOdds);
+            }
+            if (mamdaniOdds !== null) {
+                setMamdani(mamdaniOdds);
+                console.log('[ODDS] Updated Mamdani to:', mamdaniOdds);
+            }
         };
 
+        console.log('[ODDS] Starting odds polling every', ODDS_POLLING_INTERVAL / 1000, 'seconds');
         fetchOdds();
         const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
-        return () => clearInterval(interval);
+        return () => {
+            console.log('[ODDS] Stopping odds polling');
+            clearInterval(interval);
+        };
     }, []);
 
     return (
@@ -126,9 +139,16 @@ const MSGMain1545x960 = () => {
                 <KalshiLogo color="white" height="97px" />
                 <div className="text-text-white text-[86px] font-extrabold tracking-tight">NEXT NYC MAYOR?</div>
                 <LiveTradesIndicator height={56} width={260} fontSize={28} />
-                <div className="mt-6" style={{ marginLeft: '93px' }}>
+                <div 
+                    className="mt-6 overflow-hidden" 
+                    style={{ 
+                        marginLeft: '93px',
+                        maxHeight: '500px',
+                    }}
+                >
                     <LiveTradesAnimation
                         candidates={['MAMDANI', 'CUOMO']}
+                        marketTickers={[CUOMO_MARKET_TICKER, MAMDANI_MARKET_TICKER]}
                         tradesToDisplay={7}
                         tradeOpacities={[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]}
                         className="w-[480px]"

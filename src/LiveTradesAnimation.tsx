@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { toMoney } from './utils/caseing';
+import { fetchRecentTrades, type KalshiTrade } from './api/api';
 
 type TradeData = {
     id: string;
@@ -17,11 +18,11 @@ type TradeData = {
 const TRADE_HISTORY_POLLING_INTERVAL = 30000; // 30 seconds
 const NUM_PROFILE_IMAGES = 40;
 
-// Burst mode constants
-const BURST_MODE_PROBABILITY = 0.25;
-const BURST_INTERVALS = [400, 450, 500];
-const BURST_UPDATE_COUNTS = [4, 6, 8];
-const NORMAL_INTERVALS = [1800, 2000, 2200];
+// Adaptive animation - fast bursts then slower wait periods
+const BURST_MODE_PROBABILITY = 0.35;
+const BURST_INTERVALS = [250, 350, 450]; // Very fast bursts
+const BURST_UPDATE_COUNTS = [6, 8, 10]; // More trades in burst
+const NORMAL_INTERVALS = [2000, 2500, 3000]; // Slower wait between bursts
 
 // Seeded random number generator for deterministic content across displays
 const seededRandom = (seed: number) => {
@@ -98,67 +99,61 @@ const darkenColor = (hex: string, percent: number) => {
     return `#${((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1)}`;
 };
 
-const useSignificantTrades = (candidates: string[], seed: number) => {
+const useSignificantTrades = (marketTickers: string[]) => {
     const [tradeHistory, setTradeHistory] = useState<TradeData[]>([]);
 
-    const generateFakeTrades = useCallback(() => {
-        const fakeTrades: TradeData[] = [];
-        const randomGen = seededRandom(seed);
-
-        // Generate 200 fake trades with specific distribution using seeded random
-        for (let i = 0; i < 200; i++) {
-            const randomCandidate = candidates[Math.floor(randomGen() * candidates.length)];
-            const randomProfile = Math.floor(randomGen() * NUM_PROFILE_IMAGES) + 1;
-
-            // Determine price based on distribution
-            let randomPrice: number;
-            const random = randomGen();
-
-            if (random < 0.05) {
-                // 5% of trades between 10000 and 99999
-                randomPrice = Math.floor(randomGen() * 90000) + 10000;
-            } else if (random < 0.25) {
-                // 20% of trades between 1000 and 9999
-                randomPrice = Math.floor(randomGen() * 9000) + 1000;
-            } else if (random < 0.5) {
-                // 25% of trades between 100 and 999
-                randomPrice = Math.floor(randomGen() * 900) + 100;
-            } else {
-                // 50% of trades between 1 and 99
-                randomPrice = Math.floor(randomGen() * 99) + 1;
+    const fetchAndTransformTrades = useCallback(async () => {
+        try {
+            const apiTrades = await fetchRecentTrades(marketTickers, 100);
+            
+            if (apiTrades && apiTrades.length > 0) {
+                const transformed: TradeData[] = apiTrades.map((trade, index) => {
+                    // Determine candidate based on ticker
+                    let side = 'UNKNOWN';
+                    if (trade.ticker.includes('AC')) {
+                        side = 'CUOMO';
+                    } else if (trade.ticker.includes('D')) {
+                        side = 'MAMDANI';
+                    }
+                    
+                    // Calculate dollar value: count * price (price is already in cents)
+                    const priceInCents = trade.taker_side === 'yes' ? trade.yes_price : trade.no_price;
+                    const tradeValue = trade.count * priceInCents;
+                    
+                    return {
+                        id: trade.trade_id,
+                        price: tradeValue, // Total value in cents
+                        side: side,
+                        image_url: `/images/election_ads/shared/p${(index % NUM_PROFILE_IMAGES) + 1}-min.png`,
+                        created_at: trade.created_time,
+                        pfpColor: getSeededColor(index),
+                    };
+                });
+                
+                setTradeHistory(transformed);
             }
-
-            fakeTrades.push({
-                id: `fake-trade-${i}`,
-                price: randomPrice,
-                side: randomCandidate,
-                image_url: `/images/election_ads/shared/p${randomProfile}-min.png`,
-                created_at: new Date(Date.now() - randomGen() * 86400000).toISOString(),
-                pfpColor: getSeededColor(i),
-            });
+        } catch (error) {
+            console.error('Error fetching real trades:', error);
+            // Keep existing trades on error
         }
-
-        // Sort by created_at descending (newest first)
-        fakeTrades.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        setTradeHistory(fakeTrades);
-    }, [candidates, seed]);
+    }, [marketTickers]);
 
     useEffect(() => {
-        // Generate initial fake trades
-        generateFakeTrades();
+        // Initial fetch
+        fetchAndTransformTrades();
         
-        // Regenerate every 30 seconds to keep it fresh
-        const intervalId = setInterval(generateFakeTrades, TRADE_HISTORY_POLLING_INTERVAL);
+        // Poll for new trades every 10 seconds
+        const intervalId = setInterval(fetchAndTransformTrades, 10000);
         
         return () => clearInterval(intervalId);
-    }, [generateFakeTrades]);
+    }, [fetchAndTransformTrades]);
 
     return { tradeHistory };
 };
 
 interface LiveTradesAnimationProps {
     candidates: string[];
+    marketTickers?: string[];
     tradesToDisplay?: number;
     tradeOpacities?: number[];
     showSide?: boolean;
@@ -170,6 +165,7 @@ interface LiveTradesAnimationProps {
 
 export const LiveTradesAnimation = ({
     candidates,
+    marketTickers = [],
     tradesToDisplay = 7,
     tradeOpacities = [1, 1, 0.8, 0.6, 0.4, 0.2, 0.1],
     className,
@@ -184,8 +180,8 @@ export const LiveTradesAnimation = ({
     const animationFrameRef = useRef<number>();
     const tradeIdxRef = useRef(0);
 
-    // Use seeded fake trades for consistent display
-    const { tradeHistory } = useSignificantTrades(candidates, startTimeRef.current);
+    // Use real trades from Kalshi API
+    const { tradeHistory } = useSignificantTrades(marketTickers.length > 0 ? marketTickers : candidates);
     const { currentInterval, updateMode } = useTradeUpdateMode(startTimeRef.current);
 
     // Determine justification based on itemClassName
@@ -234,7 +230,7 @@ export const LiveTradesAnimation = ({
     }, [currentInterval, updateMode, updateTrade]);
 
     return (
-        <div className={className}>
+        <div className={className} style={{ overflow: 'hidden' }}>
             <ul className={listClassName}>
                 <AnimatePresence initial={false} mode="popLayout">
                     {trades.map((trade, index) => (
