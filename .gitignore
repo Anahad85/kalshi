@@ -29,3 +29,9 @@ lerna-debug.log*
 # Config files (keep in package.json only)
 .browserslistrc
 
+# Chrome browser for testing (too large for git)
+chrome/
+
+# Chrome/Chromium test installations
+chrome/
+
