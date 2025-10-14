@@ -5,7 +5,7 @@ interface TriangleArrowProps {
 }
 
 export const TriangleArrow = ({ color, direction, className = '' }: TriangleArrowProps) => {
-    const rotation = direction === 'down' ? 'rotate-180' : '';
+    const rotation = direction === 'up' ? 'rotate-180' : '';
 
     return (
         <svg
@@ -16,7 +16,7 @@ export const TriangleArrow = ({ color, direction, className = '' }: TriangleArro
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
         >
-            {/* Rounded triangle pointing down */}
+            {/* Rounded triangle pointing down by default, rotated for up */}
             <path
                 d="M 60 90 L 90 35 Q 92 30 87 28 L 33 28 Q 28 30 30 35 L 60 90"
                 fill={color}
