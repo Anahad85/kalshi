@@ -136,7 +136,6 @@ const MSGMain1545x960 = () => {
                 >
                     <LiveTradesAnimation
                         candidates={['MAMDANI', 'CUOMO']}
-                        marketTickers={[CUOMO_MARKET_TICKER, MAMDANI_MARKET_TICKER]}
                         tradesToDisplay={7}
                         tradeOpacities={[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]}
                         className="w-[480px]"

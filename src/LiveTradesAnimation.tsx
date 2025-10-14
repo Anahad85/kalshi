@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { toMoney } from './utils/caseing';
-import { fetchRecentTrades, type KalshiTrade } from './api/api';
 
 type TradeData = {
     id: string;
@@ -99,61 +98,67 @@ const darkenColor = (hex: string, percent: number) => {
     return `#${((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1)}`;
 };
 
-const useSignificantTrades = (marketTickers: string[]) => {
+const useSignificantTrades = (candidates: string[], seed: number) => {
     const [tradeHistory, setTradeHistory] = useState<TradeData[]>([]);
 
-    const fetchAndTransformTrades = useCallback(async () => {
-        try {
-            const apiTrades = await fetchRecentTrades(marketTickers, 100);
-            
-            if (apiTrades && apiTrades.length > 0) {
-                const transformed: TradeData[] = apiTrades.map((trade, index) => {
-                    // Determine candidate based on ticker
-                    let side = 'UNKNOWN';
-                    if (trade.ticker.includes('AC')) {
-                        side = 'CUOMO';
-                    } else if (trade.ticker.includes('D')) {
-                        side = 'MAMDANI';
-                    }
-                    
-                    // Calculate dollar value: count * price (price is already in cents)
-                    const priceInCents = trade.taker_side === 'yes' ? trade.yes_price : trade.no_price;
-                    const tradeValue = trade.count * priceInCents;
-                    
-                    return {
-                        id: trade.trade_id,
-                        price: tradeValue, // Total value in cents
-                        side: side,
-                        image_url: `/images/election_ads/shared/p${(index % NUM_PROFILE_IMAGES) + 1}-min.png`,
-                        created_at: trade.created_time,
-                        pfpColor: getSeededColor(index),
-                    };
-                });
-                
-                setTradeHistory(transformed);
+    const generateFakeTrades = useCallback(() => {
+        const fakeTrades: TradeData[] = [];
+        const randomGen = seededRandom(seed);
+
+        // Generate 200 fake trades with specific distribution using seeded random
+        for (let i = 0; i < 200; i++) {
+            const randomCandidate = candidates[Math.floor(randomGen() * candidates.length)];
+            const randomProfile = Math.floor(randomGen() * NUM_PROFILE_IMAGES) + 1;
+
+            // Determine price based on distribution
+            let randomPrice: number;
+            const random = randomGen();
+
+            if (random < 0.05) {
+                // 5% of trades between 10000 and 99999
+                randomPrice = Math.floor(randomGen() * 90000) + 10000;
+            } else if (random < 0.25) {
+                // 20% of trades between 1000 and 9999
+                randomPrice = Math.floor(randomGen() * 9000) + 1000;
+            } else if (random < 0.5) {
+                // 25% of trades between 100 and 999
+                randomPrice = Math.floor(randomGen() * 900) + 100;
+            } else {
+                // 50% of trades between 1 and 99
+                randomPrice = Math.floor(randomGen() * 99) + 1;
             }
-        } catch (error) {
-            console.error('Error fetching real trades:', error);
-            // Keep existing trades on error
+
+            fakeTrades.push({
+                id: `fake-trade-${i}`,
+                price: randomPrice,
+                side: randomCandidate,
+                image_url: `/images/election_ads/shared/p${randomProfile}-min.png`,
+                created_at: new Date(Date.now() - randomGen() * 86400000).toISOString(),
+                pfpColor: getSeededColor(i),
+            });
         }
-    }, [marketTickers]);
+
+        // Sort by created_at descending (newest first)
+        fakeTrades.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setTradeHistory(fakeTrades);
+    }, [candidates, seed]);
 
     useEffect(() => {
-        // Initial fetch
-        fetchAndTransformTrades();
+        // Generate initial fake trades
+        generateFakeTrades();
         
-        // Poll for new trades every 10 seconds
-        const intervalId = setInterval(fetchAndTransformTrades, 10000);
+        // Regenerate every 30 seconds to keep it fresh
+        const intervalId = setInterval(generateFakeTrades, TRADE_HISTORY_POLLING_INTERVAL);
         
         return () => clearInterval(intervalId);
-    }, [fetchAndTransformTrades]);
+    }, [generateFakeTrades]);
 
     return { tradeHistory };
 };
 
 interface LiveTradesAnimationProps {
     candidates: string[];
-    marketTickers?: string[];
     tradesToDisplay?: number;
     tradeOpacities?: number[];
     showSide?: boolean;
@@ -165,7 +170,6 @@ interface LiveTradesAnimationProps {
 
 export const LiveTradesAnimation = ({
     candidates,
-    marketTickers = [],
     tradesToDisplay = 7,
     tradeOpacities = [1, 1, 0.8, 0.6, 0.4, 0.2, 0.1],
     className,
@@ -180,8 +184,8 @@ export const LiveTradesAnimation = ({
     const animationFrameRef = useRef<number>();
     const tradeIdxRef = useRef(0);
 
-    // Use real trades from Kalshi API
-    const { tradeHistory } = useSignificantTrades(marketTickers.length > 0 ? marketTickers : candidates);
+    // Use fake trades for consistent display
+    const { tradeHistory } = useSignificantTrades(candidates, startTimeRef.current);
     const { currentInterval, updateMode } = useTradeUpdateMode(startTimeRef.current);
 
     // Determine justification based on itemClassName
