@@ -215,11 +215,11 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
             {/* QR code location varies by candidate */}
             {isMamdani ? (
                 <div className="absolute bottom-3 right-3">
-                    <MSGQrCode size={80} />
+                    <MSGQrCode size={120} />
                 </div>
             ) : (
                 <div className="absolute bottom-3 left-3">
-                    <MSGQrCode size={80} />
+                    <MSGQrCode size={120} />
                 </div>
             )}
         </div>
