@@ -31,7 +31,10 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
         const fetchOdds = async () => {
             const ticker = isMamdani ? MAMDANI_MARKET_TICKER : CUOMO_MARKET_TICKER;
             const oddsValue = await fetchMarketOdds(ticker);
-            if (oddsValue !== null) setOdds(oddsValue);
+            if (oddsValue !== null) {
+                setOdds(oddsValue);
+                console.log(isMamdani ? 'Mamdani:' : 'Cuomo:', oddsValue);
+            }
         };
 
         fetchOdds();

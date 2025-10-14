@@ -26,25 +26,21 @@ const MSGMain1545x960 = () => {
 
     useEffect(() => {
         const fetchOdds = async () => {
-            console.log('[ODDS] Fetching latest odds...');
             const [cuomoOdds, mamdaniOdds] = await Promise.all([
                 fetchMarketOdds(CUOMO_MARKET_TICKER),
                 fetchMarketOdds(MAMDANI_MARKET_TICKER)
             ]);
 
-            console.log('[ODDS] Response - Cuomo:', cuomoOdds, 'Mamdani:', mamdaniOdds);
-
             if (cuomoOdds !== null) {
                 setCuomo(cuomoOdds);
-                console.log('[ODDS] Updated Cuomo to', cuomoOdds);
+                console.log('Cuomo:', cuomoOdds);
             }
             if (mamdaniOdds !== null) {
                 setMamdani(mamdaniOdds);
-                console.log('[ODDS] Updated Mamdani to', mamdaniOdds);
+                console.log('Mamdani:', mamdaniOdds);
             }
         };
 
-        console.log('[ODDS] Starting polling every', ODDS_POLLING_INTERVAL / 1000, 'seconds');
         fetchOdds();
         const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
         return () => clearInterval(interval);
