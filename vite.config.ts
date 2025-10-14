@@ -5,6 +5,16 @@ import { resolve } from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      // Proxy Kalshi API requests to bypass CORS in development
+      '/api/kalshi': {
+        target: 'https://api.elections.kalshi.com/trade-api/v2',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/kalshi/, ''),
+      },
+    },
+  },
   build: {
     rollupOptions: {
       input: {
