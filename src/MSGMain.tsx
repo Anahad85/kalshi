@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { observer } from 'mobx-react';
 import { AnimatedCounter } from 'react-animated-counter';
@@ -22,8 +22,10 @@ const ODDS_POLLING_INTERVAL = 5000; // 5 seconds
 const MSGMain1545x960 = () => {
     const [mamdani, setMamdani] = useState(32);
     const [cuomo, setCuomo] = useState(68);
+    const [apiError, setApiError] = useState(false);
+    const lastUpdateRef = useRef(Date.now());
 
-    // Fetch latest odds - use real market prices
+    // Fetch latest odds - use real market prices with failsafe (Cnario best practice)
     useEffect(() => {
         const fetchLatestOdds = async () => {
             try {
@@ -34,26 +36,50 @@ const MSGMain1545x960 = () => {
                 if (cuomoMarket && mamdaniMarket) {
                     setCuomo(cuomoMarket.last_price);
                     setMamdani(mamdaniMarket.last_price);
+                    setApiError(false);
+                    lastUpdateRef.current = Date.now();
                 } else if (cuomoMarket) {
                     setCuomo(cuomoMarket.last_price);
                     setMamdani(100 - cuomoMarket.last_price);
+                    setApiError(false);
+                    lastUpdateRef.current = Date.now();
                 } else if (mamdaniMarket) {
                     setMamdani(mamdaniMarket.last_price);
                     setCuomo(100 - mamdaniMarket.last_price);
+                    setApiError(false);
+                    lastUpdateRef.current = Date.now();
                 }
             } catch (error) {
-                // no-op
+                // Cnario best practice: continue with last known values, no visual disruption
+                console.error('API Error - using cached odds:', error);
+                setApiError(true);
             }
         };
 
         // Initial fetch
         fetchLatestOdds();
 
-        // Set up polling interval
-        const intervalId = setInterval(fetchLatestOdds, ODDS_POLLING_INTERVAL);
+        // Use requestAnimationFrame for polling (Cnario best practice)
+        let animationFrameId: number;
+        let lastPollTime = Date.now();
 
-        // Clean up interval on component unmount
-        return () => clearInterval(intervalId);
+        const poll = () => {
+            const now = Date.now();
+            if (now - lastPollTime >= ODDS_POLLING_INTERVAL) {
+                fetchLatestOdds();
+                lastPollTime = now;
+            }
+            animationFrameId = requestAnimationFrame(poll);
+        };
+
+        animationFrameId = requestAnimationFrame(poll);
+
+        // Clean up
+        return () => {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+        };
     }, []);
 
     return (
@@ -135,7 +161,7 @@ const MSGMain1545x960 = () => {
             <div className="absolute top-[54px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
                 <KalshiLogo color="white" height="97px" />
                 <div className="text-text-white text-[86px] font-extrabold tracking-tight">NEXT NYC MAYOR?</div>
-                <LiveTradesIndicator height={48} fontSize={34} />
+                <LiveTradesIndicator height={48} width={260} fontSize={24} />
                 <LiveTradesAnimation
                     candidates={['MAMDANI', 'CUOMO']}
                     tradesToDisplay={7}

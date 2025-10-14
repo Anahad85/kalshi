@@ -23,10 +23,20 @@ const BURST_INTERVALS = [400, 450, 500];
 const BURST_UPDATE_COUNTS = [4, 6, 8];
 const NORMAL_INTERVALS = [1800, 2000, 2200];
 
-const useTradeUpdateMode = () => {
+// Seeded random number generator for deterministic content across displays
+const seededRandom = (seed: number) => {
+    let state = seed;
+    return () => {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+    };
+};
+
+const useTradeUpdateMode = (startTime: number) => {
     const [mode, setMode] = useState<'burst' | 'normal'>('normal');
-    const [interval, setInterval] = useState(NORMAL_INTERVALS[2]);
+    const [currentInterval, setCurrentInterval] = useState(NORMAL_INTERVALS[2]);
     const burstCountRef = useRef(0);
+    const randomGen = useRef(seededRandom(startTime));
 
     const updateMode = useCallback(() => {
         if (burstCountRef.current > 0) {
@@ -34,23 +44,26 @@ const useTradeUpdateMode = () => {
             return;
         }
 
-        const random = Math.random();
+        const random = randomGen.current();
         // 25% chance to enter burst mode
         if (random < BURST_MODE_PROBABILITY) {
             setMode('burst');
-            setInterval(BURST_INTERVALS[Math.floor(Math.random() * BURST_INTERVALS.length)]); // Random burst interval
-            burstCountRef.current = BURST_UPDATE_COUNTS[Math.floor(Math.random() * BURST_UPDATE_COUNTS.length)] - 1; // Random burst update count
+            const burstIdx = Math.floor(randomGen.current() * BURST_INTERVALS.length);
+            setCurrentInterval(BURST_INTERVALS[burstIdx]);
+            const burstCountIdx = Math.floor(randomGen.current() * BURST_UPDATE_COUNTS.length);
+            burstCountRef.current = BURST_UPDATE_COUNTS[burstCountIdx] - 1;
         } else {
             setMode('normal');
-            setInterval(NORMAL_INTERVALS[Math.floor(Math.random() * NORMAL_INTERVALS.length)]); // Random normal interval
+            const normalIdx = Math.floor(randomGen.current() * NORMAL_INTERVALS.length);
+            setCurrentInterval(NORMAL_INTERVALS[normalIdx]);
         }
     }, []);
 
-    return { mode, interval, updateMode };
+    return { mode, currentInterval, updateMode };
 };
 
-// Generate a random color for profile picture
-const getRandomColor = () => {
+// Generate a deterministic color based on seed
+const getSeededColor = (seed: number) => {
     const colors = [
         '#FF6B6B',
         '#4ECDC4',
@@ -73,7 +86,7 @@ const getRandomColor = () => {
         '#81C784',
         '#FF8A65',
     ];
-    return colors[Math.floor(Math.random() * colors.length)];
+    return colors[seed % colors.length];
 };
 
 // Darken a hex color by a percentage
@@ -85,42 +98,43 @@ const darkenColor = (hex: string, percent: number) => {
     return `#${((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1)}`;
 };
 
-const useSignificantTrades = (candidates: string[]) => {
+const useSignificantTrades = (candidates: string[], seed: number) => {
     const [tradeHistory, setTradeHistory] = useState<TradeData[]>([]);
 
-    const generateFakeTrades = () => {
+    const generateFakeTrades = useCallback(() => {
         const fakeTrades: TradeData[] = [];
+        const randomGen = seededRandom(seed);
 
-        // Generate 200 fake trades with specific distribution
+        // Generate 200 fake trades with specific distribution using seeded random
         for (let i = 0; i < 200; i++) {
-            const randomCandidate = candidates[Math.floor(Math.random() * candidates.length)];
-            const randomProfile = Math.floor(Math.random() * NUM_PROFILE_IMAGES) + 1;
+            const randomCandidate = candidates[Math.floor(randomGen() * candidates.length)];
+            const randomProfile = Math.floor(randomGen() * NUM_PROFILE_IMAGES) + 1;
 
             // Determine price based on distribution
             let randomPrice: number;
-            const random = Math.random();
+            const random = randomGen();
 
             if (random < 0.05) {
                 // 5% of trades between 10000 and 99999
-                randomPrice = Math.floor(Math.random() * 90000) + 10000;
+                randomPrice = Math.floor(randomGen() * 90000) + 10000;
             } else if (random < 0.25) {
                 // 20% of trades between 1000 and 9999
-                randomPrice = Math.floor(Math.random() * 9000) + 1000;
+                randomPrice = Math.floor(randomGen() * 9000) + 1000;
             } else if (random < 0.5) {
                 // 25% of trades between 100 and 999
-                randomPrice = Math.floor(Math.random() * 900) + 100;
+                randomPrice = Math.floor(randomGen() * 900) + 100;
             } else {
                 // 50% of trades between 1 and 99
-                randomPrice = Math.floor(Math.random() * 99) + 1;
+                randomPrice = Math.floor(randomGen() * 99) + 1;
             }
 
             fakeTrades.push({
-                id: `fake-trade-${i}-${Date.now()}`,
+                id: `fake-trade-${i}`,
                 price: randomPrice,
                 side: randomCandidate,
                 image_url: `/images/election_ads/shared/p${randomProfile}-min.png`,
-                created_at: new Date(Date.now() - Math.random() * 86400000).toISOString(), // Random time within last 24 hours
-                pfpColor: getRandomColor(),
+                created_at: new Date(Date.now() - randomGen() * 86400000).toISOString(),
+                pfpColor: getSeededColor(i),
             });
         }
 
@@ -128,18 +142,12 @@ const useSignificantTrades = (candidates: string[]) => {
         fakeTrades.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         setTradeHistory(fakeTrades);
-    };
+    }, [candidates, seed]);
 
     useEffect(() => {
         // Generate initial fake trades
         generateFakeTrades();
-
-        // Regenerate fake trades every 30 seconds to keep it fresh
-        const intervalId = setInterval(generateFakeTrades, TRADE_HISTORY_POLLING_INTERVAL);
-
-        // Clean up interval on component unmount
-        return () => clearInterval(intervalId);
-    }, []);
+    }, [generateFakeTrades]);
 
     return { tradeHistory };
 };
@@ -166,10 +174,14 @@ export const LiveTradesAnimation = ({
     showSide = false,
 }: LiveTradesAnimationProps) => {
     const [trades, setTrades] = useState<TradeData[]>([]);
-    const { tradeHistory } = useSignificantTrades(candidates);
+    const startTimeRef = useRef(Date.now());
+    const lastUpdateTimeRef = useRef(Date.now());
+    const animationFrameRef = useRef<number>();
     const tradeIdxRef = useRef(0);
 
-    const { interval, updateMode } = useTradeUpdateMode();
+    // Use start time as seed for deterministic content
+    const { tradeHistory } = useSignificantTrades(candidates, startTimeRef.current);
+    const { currentInterval, updateMode } = useTradeUpdateMode(startTimeRef.current);
 
     // Determine justification based on itemClassName
     const isRightAligned = itemClassName?.includes('text-right');
@@ -192,14 +204,29 @@ export const LiveTradesAnimation = ({
         }
     }, [tradeHistory, tradesToDisplay]);
 
+    // Use requestAnimationFrame for smooth, synchronized animations (Cnario best practice)
     useEffect(() => {
-        const timer = setInterval(() => {
-            updateTrade();
-            updateMode();
-        }, interval);
+        const animate = () => {
+            const now = Date.now();
+            const elapsed = now - lastUpdateTimeRef.current;
 
-        return () => clearInterval(timer);
-    }, [interval, updateMode, updateTrade]);
+            if (elapsed >= currentInterval) {
+                updateTrade();
+                updateMode();
+                lastUpdateTimeRef.current = now;
+            }
+
+            animationFrameRef.current = requestAnimationFrame(animate);
+        };
+
+        animationFrameRef.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [currentInterval, updateMode, updateTrade]);
 
     return (
         <div className={className}>
