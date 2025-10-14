@@ -185,7 +185,7 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
                     <TriangleArrow color={arrowColor} direction={direction} />
                 </div>
                 {isMamdani ? (
-                    <div className="absolute bottom-8 left-[36px] w-[560px]">
+                    <div className="absolute bottom-8 left-[60px] w-[340px]">
                         <LiveTradesAnimation
                             candidates={[name.toUpperCase()]}
                             tradesToDisplay={11}
@@ -198,7 +198,7 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
                         />
                     </div>
                 ) : (
-                    <div className="absolute bottom-8 right-[80px] w-[560px]">
+                    <div className="absolute bottom-8 right-[60px] w-[340px]">
                         <LiveTradesAnimation
                             candidates={[name.toUpperCase()]}
                             tradesToDisplay={11}
