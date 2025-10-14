@@ -88,6 +88,9 @@ const MSGMain1545x960 = () => {
             style={{
                 transform: 'translateZ(0)',
                 WebkitTransform: 'translateZ(0)',
+                position: 'absolute',
+                top: 0,
+                left: 0,
             }}
         >
             {/* Overall background gradient */}
@@ -158,27 +161,32 @@ const MSGMain1545x960 = () => {
             </div>
 
             {/* Title and Live Trades pill */}
-            <div className="absolute top-[54px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+            <div 
+                className="absolute top-[54px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+                style={{ marginLeft: '5px' }}
+            >
                 <KalshiLogo color="white" height="97px" />
                 <div className="text-text-white text-[86px] font-extrabold tracking-tight">NEXT NYC MAYOR?</div>
-                <LiveTradesIndicator height={48} width={260} fontSize={24} />
-                <LiveTradesAnimation
-                    candidates={['MAMDANI', 'CUOMO']}
-                    tradesToDisplay={7}
-                    tradeOpacities={[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]}
-                    className="w-[480px]"
-                    listClassName="flex flex-col gap-3"
-                    itemClassName="flex items-center gap-4 text-3xl font-semibold drop-shadow-sm"
-                    showSide={true}
-                    fontSize={36}
-                />
+                <LiveTradesIndicator height={56} width={260} fontSize={28} />
+                <div className="mt-6" style={{ marginLeft: '100px' }}>
+                    <LiveTradesAnimation
+                        candidates={['MAMDANI', 'CUOMO']}
+                        tradesToDisplay={7}
+                        tradeOpacities={[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]}
+                        className="w-[480px]"
+                        listClassName="flex flex-col gap-[29px]"
+                        itemClassName="flex items-center gap-4 text-3xl font-semibold drop-shadow-sm"
+                        showSide={true}
+                        fontSize={36}
+                    />
+                </div>
             </div>
 
             {/* Middle faded trades column */}
 
             {/* Left odds block */}
             <div className="absolute left-6 bottom-6 z-10">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide">MAMDANI</div>
+                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-2">MAMDANI</div>
                 <div className="flex items-baseline gap-0">
                     <AnimatedCounter
                         value={mamdani}
@@ -199,7 +207,7 @@ const MSGMain1545x960 = () => {
 
             {/* Right odds block */}
             <div className="absolute right-6 bottom-6 z-10 text-right">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide">CUOMO</div>
+                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-2">CUOMO</div>
                 <div className="flex items-baseline gap-0 justify-end">
                     <TriangleArrow color="#D91616" direction="down" className="" />
                     <AnimatedCounter
@@ -218,8 +226,6 @@ const MSGMain1545x960 = () => {
                 </div>
             </div>
 
-            {/* Outer safe border like screenshot */}
-            <div className="absolute inset-2 border-4 border-black/50 pointer-events-none" />
         </div>
     );
 };

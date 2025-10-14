@@ -9,11 +9,11 @@ export const LiveTradesIndicator = ({ height = 31, width = 175, fontSize = 20 }:
     const indicatorDiameter = height * 0.6;
     return (
         <div 
-            className="flex items-center rounded-full bg-white gap-2"
+            className="inline-flex items-center rounded-full bg-white"
             style={{
                 height: `${height}px`,
-                width: `${width}px`,
-                padding: '4px 8px',
+                padding: '0 16px',
+                gap: '12px',
             }}
         >
             <div
