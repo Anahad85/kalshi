@@ -26,30 +26,25 @@ const MSGMain1545x960 = () => {
 
     useEffect(() => {
         const fetchOdds = async () => {
-            console.log('🔄 Fetching odds from Kalshi API...');
+            console.log('[ODDS] Fetching latest odds...');
             const [cuomoOdds, mamdaniOdds] = await Promise.all([
                 fetchMarketOdds(CUOMO_MARKET_TICKER),
                 fetchMarketOdds(MAMDANI_MARKET_TICKER)
             ]);
 
-            console.log('📊 API Response - Cuomo:', cuomoOdds, 'Mamdani:', mamdaniOdds);
+            console.log('[ODDS] Response - Cuomo:', cuomoOdds, 'Mamdani:', mamdaniOdds);
 
-            // Update only if API returned valid data (works in Cnario, silent fail in browsers due to CORS)
             if (cuomoOdds !== null) {
                 setCuomo(cuomoOdds);
-                console.log('✅ Updated Cuomo to', cuomoOdds);
-            } else {
-                console.log('⚠️ CORS blocked in browser - using default Cuomo odds (will work in Cnario)');
+                console.log('[ODDS] Updated Cuomo to', cuomoOdds);
             }
             if (mamdaniOdds !== null) {
                 setMamdani(mamdaniOdds);
-                console.log('✅ Updated Mamdani to', mamdaniOdds);
-            } else {
-                console.log('⚠️ CORS blocked in browser - using default Mamdani odds (will work in Cnario)');
+                console.log('[ODDS] Updated Mamdani to', mamdaniOdds);
             }
         };
 
-        console.log('🚀 Starting odds polling every', ODDS_POLLING_INTERVAL / 1000, 'seconds');
+        console.log('[ODDS] Starting polling every', ODDS_POLLING_INTERVAL / 1000, 'seconds');
         fetchOdds();
         const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
         return () => clearInterval(interval);

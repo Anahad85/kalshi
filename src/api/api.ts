@@ -8,17 +8,25 @@ export interface KalshiTrade {
     created_time: string;
 }
 
-// Get market odds - uses Vite proxy in dev, direct API in production (Cnario)
+// Get market odds - works everywhere (dev, Netlify, Cnario)
 export const fetchMarketOdds = async (ticker: string): Promise<number | null> => {
     try {
-        // In development: use Vite proxy (/api/kalshi)
-        // In production (Cnario): direct API call works (no CORS)
-        const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        const baseUrl = isDev 
-            ? '/api/kalshi'  // Vite proxy in dev
-            : 'https://api.elections.kalshi.com/trade-api/v2'; // Direct in production
+        const hostname = window.location.hostname;
+        let url: string;
         
-        const url = `${baseUrl}/markets/${ticker}`;
+        // Localhost: use Vite proxy
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            url = `/api/kalshi/markets/${ticker}`;
+        }
+        // Netlify: use serverless function
+        else if (hostname.includes('netlify.app') || hostname.includes('netlify.live')) {
+            url = `/api/market-odds?ticker=${ticker}`;
+        }
+        // Cnario or other: direct API
+        else {
+            url = `https://api.elections.kalshi.com/trade-api/v2/markets/${ticker}`;
+        }
+        
         const response = await fetch(url);
         
         if (!response.ok) {

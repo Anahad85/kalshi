@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/market-odds"
+  to = "/.netlify/functions/market-odds"
+  status = 200
+
