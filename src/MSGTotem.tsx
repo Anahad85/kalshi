@@ -167,10 +167,10 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
             )}
 
             {/* Header */}
-            <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center h-full w-[560px]" style={{ gap: isMamdani ? '17px' : '12px' }}>
+            <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center h-full w-[560px]" style={{ gap: '17px' }}>
                 <KalshiLogo color="white" height="55px" />
                 <LiveTradesIndicator height={36} width={200} fontSize={16} />
-                <div className="flex items-baseline" style={{ marginLeft: isMamdani ? '4px' : '0px' }}>
+                <div className="flex items-baseline" style={{ marginLeft: '4px' }}>
                     <AnimatedCounter
                         value={odds}
                         includeDecimals={false}
@@ -185,7 +185,7 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
                         decrementColor="#FF0000"
                     />
                     <div className="text-[120px] leading-none font-extrabold text-text-white">%</div>
-                    <div style={{ marginLeft: isMamdani ? '-10px' : '0px' }}>
+                    <div style={{ marginLeft: '-10px' }}>
                         <TriangleArrow color={arrowColor} direction={direction} />
                     </div>
                 </div>
