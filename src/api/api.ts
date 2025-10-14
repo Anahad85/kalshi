@@ -1,23 +1,16 @@
-interface Market {
-    ticker_name: string;
-    last_price: number;
-}
-
-interface Event {
-    ticker: string;
-    markets?: Market[];
-}
-
-export const fetchEvent = async (ticker: string): Promise<Event | null> => {
+// Simplified API - just get market odds
+export const fetchMarketOdds = async (ticker: string): Promise<number | null> => {
     try {
-        const response = await fetch(`https://api.kalshi.com/trade-api/v2/events/${ticker}`);
+        const response = await fetch(`https://api.elections.kalshi.com/trade-api/v2/markets/${ticker}`);
         if (!response.ok) {
-            throw new Error('Failed to fetch event');
+            console.error(`Failed to fetch market ${ticker}: ${response.status}`);
+            return null;
         }
         const data = await response.json();
-        return data.event;
+        console.log(`Market ${ticker} data:`, data);
+        return data.market?.last_price ?? null;
     } catch (error) {
-        console.error('Error fetching event:', error);
+        console.error('Error fetching market odds:', error);
         return null;
     }
 };

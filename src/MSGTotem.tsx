@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
 import { AnimatedCounter } from 'react-animated-counter';
 
-import { fetchEvent } from './api/api';
+import { fetchMarketOdds } from './api/api';
 import { LiveTradesAnimation } from './LiveTradesAnimation';
 import { LiveTradesIndicator } from './LiveTradesIndicator';
 import KalshiLogo from './KalshiLogo';
@@ -25,62 +25,18 @@ interface MSGTotemProps {
 
 const MSGTotem = ({ candidate }: MSGTotemProps) => {
     const isMamdani = candidate === 'mamdani';
-    const [odds, setOdds] = useState(isMamdani ? 32 : 68);
-    const [apiError, setApiError] = useState(false);
-    const lastUpdateRef = useRef(Date.now());
+    const [odds, setOdds] = useState(isMamdani ? 88 : 12);
 
-    // Fetch latest odds - use real market prices with failsafe (Cnario best practice)
     useEffect(() => {
-        const fetchLatestOdds = async () => {
-            try {
-                const event = await fetchEvent(EVENT_TICKER);
-                const cuomoMarket = event?.markets?.find((m: any) => m.ticker_name === CUOMO_MARKET_TICKER);
-                const mamdaniMarket = event?.markets?.find((m: any) => m.ticker_name === MAMDANI_MARKET_TICKER);
-
-                if (cuomoMarket && mamdaniMarket) {
-                    setOdds(isMamdani ? mamdaniMarket.last_price : cuomoMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                } else if (cuomoMarket) {
-                    setOdds(isMamdani ? 100 - cuomoMarket.last_price : cuomoMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                } else if (mamdaniMarket) {
-                    setOdds(isMamdani ? mamdaniMarket.last_price : 100 - mamdaniMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                }
-            } catch (error) {
-                // Cnario best practice: continue with last known values, no visual disruption
-                console.error('API Error - using cached odds:', error);
-                setApiError(true);
-            }
+        const fetchOdds = async () => {
+            const ticker = isMamdani ? MAMDANI_MARKET_TICKER : CUOMO_MARKET_TICKER;
+            const oddsValue = await fetchMarketOdds(ticker);
+            if (oddsValue !== null) setOdds(oddsValue);
         };
 
-        // Initial fetch
-        fetchLatestOdds();
-
-        // Use requestAnimationFrame for polling (Cnario best practice)
-        let animationFrameId: number;
-        let lastPollTime = Date.now();
-
-        const poll = () => {
-            const now = Date.now();
-            if (now - lastPollTime >= ODDS_POLLING_INTERVAL) {
-                fetchLatestOdds();
-                lastPollTime = now;
-            }
-            animationFrameId = requestAnimationFrame(poll);
-        };
-
-        animationFrameId = requestAnimationFrame(poll);
-
-        // Clean up
-        return () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
+        fetchOdds();
+        const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
+        return () => clearInterval(interval);
     }, [isMamdani]);
 
     const name = isMamdani ? 'MAMDANI' : 'CUOMO';

@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { observer } from 'mobx-react';
 import { AnimatedCounter } from 'react-animated-counter';
 
-import { fetchEvent } from './api/api';
+import { fetchMarketOdds } from './api/api';
 import { LiveTradesAnimation } from './LiveTradesAnimation';
 import { LiveTradesIndicator } from './LiveTradesIndicator';
 import KalshiLogo from './KalshiLogo';
@@ -20,66 +20,24 @@ const MAMDANI_MARKET_TICKER = 'KXMAYORNYCPARTY-25-D';
 const ODDS_POLLING_INTERVAL = 5000; // 5 seconds
 
 const MSGMain1545x960 = () => {
-    const [mamdani, setMamdani] = useState(32);
-    const [cuomo, setCuomo] = useState(68);
-    const [apiError, setApiError] = useState(false);
-    const lastUpdateRef = useRef(Date.now());
+    // Real-time odds from Kalshi API
+    const [mamdani, setMamdani] = useState(88);
+    const [cuomo, setCuomo] = useState(12);
 
-    // Fetch latest odds - use real market prices with failsafe (Cnario best practice)
     useEffect(() => {
-        const fetchLatestOdds = async () => {
-            try {
-                const event = await fetchEvent(EVENT_TICKER);
-                const cuomoMarket = event?.markets?.find((m: any) => m.ticker_name === CUOMO_MARKET_TICKER);
-                const mamdaniMarket = event?.markets?.find((m: any) => m.ticker_name === MAMDANI_MARKET_TICKER);
+        const fetchOdds = async () => {
+            const [cuomoOdds, mamdaniOdds] = await Promise.all([
+                fetchMarketOdds(CUOMO_MARKET_TICKER),
+                fetchMarketOdds(MAMDANI_MARKET_TICKER)
+            ]);
 
-                if (cuomoMarket && mamdaniMarket) {
-                    setCuomo(cuomoMarket.last_price);
-                    setMamdani(mamdaniMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                } else if (cuomoMarket) {
-                    setCuomo(cuomoMarket.last_price);
-                    setMamdani(100 - cuomoMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                } else if (mamdaniMarket) {
-                    setMamdani(mamdaniMarket.last_price);
-                    setCuomo(100 - mamdaniMarket.last_price);
-                    setApiError(false);
-                    lastUpdateRef.current = Date.now();
-                }
-            } catch (error) {
-                // Cnario best practice: continue with last known values, no visual disruption
-                console.error('API Error - using cached odds:', error);
-                setApiError(true);
-            }
+            if (cuomoOdds !== null) setCuomo(cuomoOdds);
+            if (mamdaniOdds !== null) setMamdani(mamdaniOdds);
         };
 
-        // Initial fetch
-        fetchLatestOdds();
-
-        // Use requestAnimationFrame for polling (Cnario best practice)
-        let animationFrameId: number;
-        let lastPollTime = Date.now();
-
-        const poll = () => {
-            const now = Date.now();
-            if (now - lastPollTime >= ODDS_POLLING_INTERVAL) {
-                fetchLatestOdds();
-                lastPollTime = now;
-            }
-            animationFrameId = requestAnimationFrame(poll);
-        };
-
-        animationFrameId = requestAnimationFrame(poll);
-
-        // Clean up
-        return () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
+        fetchOdds();
+        const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
+        return () => clearInterval(interval);
     }, []);
 
     return (
@@ -168,7 +126,7 @@ const MSGMain1545x960 = () => {
                 <KalshiLogo color="white" height="97px" />
                 <div className="text-text-white text-[86px] font-extrabold tracking-tight">NEXT NYC MAYOR?</div>
                 <LiveTradesIndicator height={56} width={260} fontSize={28} />
-                <div className="mt-6" style={{ marginLeft: '100px' }}>
+                <div className="mt-6" style={{ marginLeft: '93px' }}>
                     <LiveTradesAnimation
                         candidates={['MAMDANI', 'CUOMO']}
                         tradesToDisplay={7}
@@ -186,7 +144,7 @@ const MSGMain1545x960 = () => {
 
             {/* Left odds block */}
             <div className="absolute left-6 bottom-6 z-10">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-2">MAMDANI</div>
+                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-0">MAMDANI</div>
                 <div className="flex items-baseline gap-0">
                     <AnimatedCounter
                         value={mamdani}
@@ -207,9 +165,11 @@ const MSGMain1545x960 = () => {
 
             {/* Right odds block */}
             <div className="absolute right-6 bottom-6 z-10 text-right">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-2">CUOMO</div>
-                <div className="flex items-baseline gap-0 justify-end">
-                    <TriangleArrow color="#D91616" direction="down" className="" />
+                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-0">CUOMO</div>
+                <div className="flex items-baseline justify-end" style={{ gap: '0px' }}>
+                    <div style={{ marginRight: '-60px' }}>
+                        <TriangleArrow color="#D91616" direction="down" className="" />
+                    </div>
                     <AnimatedCounter
                         value={cuomo}
                         includeDecimals={false}

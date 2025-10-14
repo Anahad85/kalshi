@@ -147,6 +147,11 @@ const useSignificantTrades = (candidates: string[], seed: number) => {
     useEffect(() => {
         // Generate initial fake trades
         generateFakeTrades();
+        
+        // Regenerate every 30 seconds to keep it fresh
+        const intervalId = setInterval(generateFakeTrades, TRADE_HISTORY_POLLING_INTERVAL);
+        
+        return () => clearInterval(intervalId);
     }, [generateFakeTrades]);
 
     return { tradeHistory };
@@ -179,7 +184,7 @@ export const LiveTradesAnimation = ({
     const animationFrameRef = useRef<number>();
     const tradeIdxRef = useRef(0);
 
-    // Use start time as seed for deterministic content
+    // Use seeded fake trades for consistent display
     const { tradeHistory } = useSignificantTrades(candidates, startTimeRef.current);
     const { currentInterval, updateMode } = useTradeUpdateMode(startTimeRef.current);
 
