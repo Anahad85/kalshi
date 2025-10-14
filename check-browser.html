@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><title>Check Browser Version</title></head>
+<body style="font-family: monospace; padding: 40px;">
+<h1>Browser Compatibility Check</h1>
+<div id="info"></div>
+<script>
+const info = document.getElementById('info');
+const ua = navigator.userAgent;
+const chromeMatch = ua.match(/Chrome\/(\d+)/);
+const chromiumVersion = chromeMatch ? chromeMatch[1] : 'Not Chrome/Chromium';
+
+info.innerHTML = `
+<h2>Your Browser:</h2>
+<p><strong>User Agent:</strong> ${ua}</p>
+<p><strong>Chromium Version:</strong> ${chromiumVersion}</p>
+<p><strong>Status:</strong> ${parseInt(chromiumVersion) >= 127 ? '✅ Compatible with Chromium 127+' : '❌ Need Chrome 127 or newer'}</p>
+<h3>Features Test:</h3>
+<ul>
+<li>Fetch API: ${typeof fetch !== 'undefined' ? '✅' : '❌'}</li>
+<li>requestAnimationFrame: ${typeof requestAnimationFrame !== 'undefined' ? '✅' : '❌'}</li>
+<li>CSS Grid: ${CSS.supports('display', 'grid') ? '✅' : '❌'}</li>
+<li>CSS Flexbox: ${CSS.supports('display', 'flex') ? '✅' : '❌'}</li>
+<li>Transform3D: ${CSS.supports('transform', 'translateZ(0)') ? '✅' : '❌'}</li>
+</ul>
+`;
+</script>
+</body>
+</html>
