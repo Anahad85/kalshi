@@ -170,20 +170,11 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
             <div className="absolute top-8 left-1/2 -translate-x-1/2 flex flex-col items-center h-full w-[560px]" style={{ gap: '17px' }}>
                 <KalshiLogo color="white" height="55px" />
                 <LiveTradesIndicator height={36} width={200} fontSize={16} />
-                <div className="flex items-baseline" style={{ marginLeft: '4px' }}>
-                    <AnimatedCounter
-                        value={odds}
-                        includeDecimals={false}
-                        fontSize="120px"
-                        digitStyles={{
-                            lineHeight: 1,
-                            fontWeight: 'Bold',
-                            letterSpacing: '-0.06em',
-                        }}
-                        color="white"
-                        incrementColor="#00D4AA"
-                        decrementColor="#FF0000"
-                    />
+                <div className="flex items-baseline justify-center">
+                    {/* Use simple text for better digit spacing */}
+                    <div className="text-[120px] leading-none font-extrabold text-text-white" style={{ letterSpacing: '-0.02em' }}>
+                        {odds}
+                    </div>
                     <div className="text-[120px] leading-none font-extrabold text-text-white">%</div>
                     <div style={{ marginLeft: '-10px' }}>
                         <TriangleArrow color={arrowColor} direction={direction} />
@@ -203,7 +194,7 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
                         />
                     </div>
                 ) : (
-                    <div className="absolute bottom-8 right-[60px] w-[340px]">
+                    <div className="absolute bottom-8 right-[70px] w-[340px]">
                         <LiveTradesAnimation
                             candidates={[name.toUpperCase()]}
                             tradesToDisplay={11}
