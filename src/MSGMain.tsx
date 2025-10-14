@@ -179,7 +179,7 @@ const MSGMain1545x960 = () => {
                         decrementColor="#FF0000"
                     />
                     <div className="text-[200px] leading-none font-extrabold text-text-white tracking-tighter">%</div>
-                    <TriangleArrow color={Palette.Green.x10} direction="up" className="" />
+                    <TriangleArrow color="#00D4AA" direction="up" className="" />
                 </div>
             </div>
 

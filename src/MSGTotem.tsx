@@ -42,7 +42,7 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
     const name = isMamdani ? 'MAMDANI' : 'CUOMO';
     const imageSrc = isMamdani ? '/images/nyc-mayor/mamdani_totem.png' : '/images/nyc-mayor/cuomo_totem.png';
     const direction = isMamdani ? 'up' : 'down';
-    const arrowColor = isMamdani ? '#00D4AA' : '#FF0000';
+    const arrowColor = isMamdani ? '#00D4AA' : '#D91616'; // Green up for Mamdani, Red down for Cuomo
 
     return (
         <div 
@@ -50,6 +50,9 @@ const MSGTotem = ({ candidate }: MSGTotemProps) => {
             style={{
                 transform: 'translateZ(0)',
                 WebkitTransform: 'translateZ(0)',
+                position: 'absolute',
+                top: 0,
+                left: 0,
             }}
         >
             {/* Background gradient */}
