@@ -26,31 +26,19 @@ const MSGMain1545x960 = () => {
 
     useEffect(() => {
         const fetchOdds = async () => {
-            console.log('[ODDS] Fetching latest odds...');
             const [cuomoOdds, mamdaniOdds] = await Promise.all([
                 fetchMarketOdds(CUOMO_MARKET_TICKER),
                 fetchMarketOdds(MAMDANI_MARKET_TICKER)
             ]);
 
-            console.log('[ODDS] Received - Cuomo:', cuomoOdds, 'Mamdani:', mamdaniOdds);
-
-            if (cuomoOdds !== null) {
-                setCuomo(cuomoOdds);
-                console.log('[ODDS] Updated Cuomo to:', cuomoOdds);
-            }
-            if (mamdaniOdds !== null) {
-                setMamdani(mamdaniOdds);
-                console.log('[ODDS] Updated Mamdani to:', mamdaniOdds);
-            }
+            // Update only if API returned valid data (works in Cnario, silent fail in browsers)
+            if (cuomoOdds !== null) setCuomo(cuomoOdds);
+            if (mamdaniOdds !== null) setMamdani(mamdaniOdds);
         };
 
-        console.log('[ODDS] Starting odds polling every', ODDS_POLLING_INTERVAL / 1000, 'seconds');
         fetchOdds();
         const interval = setInterval(fetchOdds, ODDS_POLLING_INTERVAL);
-        return () => {
-            console.log('[ODDS] Stopping odds polling');
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
     return (

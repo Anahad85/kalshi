@@ -8,45 +8,49 @@ export interface KalshiTrade {
     created_time: string;
 }
 
-// Get market odds via proxy (bypasses CORS)
+// Get market odds - calls Kalshi API directly (works in Cnario, fails in browsers due to CORS)
 export const fetchMarketOdds = async (ticker: string): Promise<number | null> => {
     try {
-        const url = `http://localhost:3001/api/markets/${ticker}`;
-        console.log(`[API] Fetching from proxy: ${url}`);
+        const url = `https://api.elections.kalshi.com/trade-api/v2/markets/${ticker}`;
         
         const response = await fetch(url);
         
         if (!response.ok) {
-            console.error(`[API] Failed to fetch market ${ticker}: ${response.status}`);
             return null;
         }
         
         const data = await response.json();
-        console.log(`[API] Success for ${ticker}:`, data.market?.last_price);
         return data.market?.last_price ?? null;
     } catch (error) {
-        console.error(`[API] Error fetching market ${ticker}:`, error);
+        // CORS error in browsers - will work in Cnario player
         return null;
     }
 };
 
-// Get recent trades via proxy (bypasses CORS)
+// Get recent trades - calls Kalshi API directly (works in Cnario, fails in browsers due to CORS)
 export const fetchRecentTrades = async (tickers: string[], limit: number = 50): Promise<KalshiTrade[]> => {
     try {
-        const tickerParam = tickers.join(',');
-        const url = `http://localhost:3001/api/trades?ticker=${tickerParam}&limit=${limit}`;
-        console.log(`[API] Fetching trades from proxy: ${url}`);
+        // Fetch trades for each ticker separately
+        const allTrades: KalshiTrade[] = [];
         
-        const response = await fetch(url);
-        if (!response.ok) {
-            console.error(`[API] Failed to fetch trades: ${response.status}`);
-            return [];
+        for (const ticker of tickers) {
+            const url = `https://api.elections.kalshi.com/trade-api/v2/markets/trades?ticker=${ticker}&limit=${limit}`;
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.trades) {
+                    allTrades.push(...data.trades);
+                }
+            }
         }
-        const data = await response.json();
-        console.log(`[API] Received ${data.trades?.length || 0} trades`);
-        return data.trades || [];
+        
+        // Sort by created_time descending
+        allTrades.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime());
+        
+        return allTrades.slice(0, limit);
     } catch (error) {
-        console.error('[API] Error fetching trades:', error);
+        // CORS error in browsers - will work in Cnario player
         return [];
     }
 };
