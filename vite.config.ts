@@ -9,9 +9,15 @@ export default defineConfig({
     proxy: {
       // Proxy Kalshi API requests to bypass CORS in development
       '/api/kalshi': {
-        target: 'https://api.elections.kalshi.com/trade-api/v2',
+        target: 'https://api.elections.kalshi.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/kalshi/, ''),
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/kalshi/, '/trade-api/v2'),
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying:', req.method, req.url, '→', options.target + proxyReq.path);
+          });
+        },
       },
     },
   },
@@ -19,9 +25,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        'main-board': resolve(__dirname, 'main-board.html'),
-        'mamdani-totem': resolve(__dirname, 'mamdani-totem.html'),
-        'cuomo-totem': resolve(__dirname, 'cuomo-totem.html'),
       },
     },
     // Optimize for Chromium 127

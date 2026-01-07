@@ -11,33 +11,62 @@ import { Palette } from './DesignSystem2/Theme';
 
 import { TriangleArrow } from './TriangleArrow';
 
-// Constants
-const EVENT_TICKER = 'KXMAYORNYCPARTY-25';
-const CUOMO_MARKET_TICKER = 'KXMAYORNYCPARTY-25-AC';
-const MAMDANI_MARKET_TICKER = 'KXMAYORNYCPARTY-25-D';
+// Constants - College Football Game Miami vs Mississippi
+// Each team has its own market ticker
+const MIAMI_MARKET_TICKER = 'KXNCAAFGAME-26JAN08MIAMISS-MIA';
+const OLEMISS_MARKET_TICKER = 'KXNCAAFGAME-26JAN08MIAMISS-MISS';
 
 // Odds update constants
 const ODDS_POLLING_INTERVAL = 5000; // 5 seconds
 
+// Set to true to see animation demo with changing values
+const DEMO_MODE = false;
+
 const MSGMain1545x960 = () => {
     // Real-time odds from Kalshi API
-    const [mamdani, setMamdani] = useState(88);
-    const [cuomo, setCuomo] = useState(12);
+    const [florida, setFlorida] = useState(50);
+    const [oleMiss, setOleMiss] = useState(50);
 
     useEffect(() => {
+        if (DEMO_MODE) {
+            // Demo mode: cycle through different values to show animation
+            const demoValues = [
+                { miami: 61, oleMiss: 39 },
+                { miami: 55, oleMiss: 45 },
+                { miami: 68, oleMiss: 32 },
+                { miami: 45, oleMiss: 55 },
+                { miami: 72, oleMiss: 28 },
+                { miami: 61, oleMiss: 39 },
+            ];
+            let index = 0;
+            
+            const demoInterval = setInterval(() => {
+                const values = demoValues[index];
+                setFlorida(values.miami);
+                setOleMiss(values.oleMiss);
+                console.log(`🎬 Demo: Miami ${values.miami}% | Ole Miss ${values.oleMiss}%`);
+                index = (index + 1) % demoValues.length;
+            }, 3000);
+            
+            return () => clearInterval(demoInterval);
+        }
+        
         const fetchOdds = async () => {
-            const [cuomoOdds, mamdaniOdds] = await Promise.all([
-                fetchMarketOdds(CUOMO_MARKET_TICKER),
-                fetchMarketOdds(MAMDANI_MARKET_TICKER)
+            // Fetch both team's markets
+            const [miamiOdds, oleMissOdds] = await Promise.all([
+                fetchMarketOdds(MIAMI_MARKET_TICKER),
+                fetchMarketOdds(OLEMISS_MARKET_TICKER)
             ]);
 
-            if (cuomoOdds !== null) {
-                setCuomo(cuomoOdds);
-                console.log('Cuomo:', cuomoOdds);
-            }
-            if (mamdaniOdds !== null) {
-                setMamdani(mamdaniOdds);
-                console.log('Mamdani:', mamdaniOdds);
+            if (miamiOdds !== null && oleMissOdds !== null) {
+                // Normalize odds to add up to 100%
+                const total = miamiOdds + oleMissOdds;
+                const normalizedMiami = Math.round((miamiOdds / total) * 100);
+                const normalizedOleMiss = 100 - normalizedMiami; // Ensure exactly 100%
+                
+                setFlorida(normalizedMiami);
+                setOleMiss(normalizedOleMiss);
+                console.log(`✅ Miami: ${normalizedMiami}% | Ole Miss: ${normalizedOleMiss}% (raw: ${miamiOdds}/${oleMissOdds})`);
             }
         };
 
@@ -48,7 +77,7 @@ const MSGMain1545x960 = () => {
 
     return (
         <div 
-            className="relative h-[864px] w-[1736px] overflow-hidden"
+            className="relative h-[1080px] w-[1920px] overflow-hidden"
             style={{
                 transform: 'translateZ(0)',
                 WebkitTransform: 'translateZ(0)',
@@ -57,53 +86,116 @@ const MSGMain1545x960 = () => {
                 left: 0,
             }}
         >
-            {/* Overall background gradient */}
+            {/* Left side - Florida */}
             <div
-                className="absolute inset-0"
+                className="absolute left-0 top-0 bottom-0"
                 style={{
-                    background: 'linear-gradient(90deg, #0D6EFE 0%, #FD942C 100%)',
+                    width: '50%',
+                    overflow: 'hidden',
                 }}
-            />
+            >
+                {/* Florida player image - full background */}
+                <img 
+                    src="/images/nyc-mayor/Beck-scaled.jpg" 
+                    alt="Florida Player" 
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: '45% center',
+                    }}
+                />
+                {/* Dark tint overlay */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                }} />
+            </div>
 
-            {/* Candidate images */}
-            <div className="w-full h-full absolute bottom-0 left-0 right-0 flex flex-row items-end justify-between select-none">
-                <img src="/images/nyc-mayor/mamdani_msg.png" alt="Zohran Mamdani" height="800" width="700" />
-                <img src="/images/nyc-mayor/cuomo_msg.png" alt="Andrew Cuomo" height="800" width="800" />
+            {/* Right side - Ole Miss */}
+            <div
+                className="absolute right-0 top-0 bottom-0"
+                style={{
+                    width: '50%',
+                    overflow: 'hidden',
+                }}
+            >
+                {/* Ole Miss player image - full background */}
+                <img 
+                    src="/images/nyc-mayor/s-l400.jpg" 
+                    alt="Ole Miss Player" 
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transform: 'scaleX(-1)',
+                    }}
+                />
+                {/* Dark tint overlay */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                }} />
+            </div>
+
+            {/* Title at top - overlaying the border */}
+            <div 
+                className="absolute top-[40px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+                style={{ zIndex: 15 }}
+            >
+                <KalshiLogo color="white" height="100px" />
+                <div className="text-text-white text-[100px] font-extrabold tracking-tight drop-shadow-lg whitespace-nowrap" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8)' }}>
+                    MIAMI VS MISSISSIPPI
+                </div>
             </div>
             {/* Rectangle 11114159 - Dark gradient overlay */}
             {/* Mask group */}
             <div
                 style={{
                     position: 'absolute',
-                    width: '1760px',
-                    height: '552px',
-                    left: '-12px',
-                    top: '312px',
+                    width: '1950px',
+                    height: '690px',
+                    left: '-15px',
+                    top: '390px',
                     pointerEvents: 'none',
                 }}
             >
-                <svg width="1760" height="552" viewBox="0 0 1760 552" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="1950" height="690" viewBox="0 0 1950 690" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <mask
                         id="mask0_216_47"
                         style={{ maskType: 'alpha' }}
                         maskUnits="userSpaceOnUse"
                         x="0"
                         y="0"
-                        width="1760"
-                        height="552"
+                        width="1950"
+                        height="690"
                     >
-                        <rect width="1760" height="552" fill="url(#paint0_linear_216_47)" />
+                        <rect width="1950" height="690" fill="url(#paint0_linear_216_47)" />
                     </mask>
                     <g mask="url(#mask0_216_47)">
-                        <rect y="-475.317" width="1760" height="1027.32" fill="url(#paint1_linear_216_47)" />
+                        <rect y="-594" width="1950" height="1284" fill="url(#paint1_linear_216_47)" />
                     </g>
                     <defs>
                         <linearGradient
                             id="paint0_linear_216_47"
-                            x1="896.5"
-                            y1="552"
-                            x2="885.003"
-                            y2="0.239541"
+                            x1="975"
+                            y1="690"
+                            x2="963"
+                            y2="0.3"
                             gradientUnits="userSpaceOnUse"
                         >
                             <stop offset="0.331731" stopColor="white" />
@@ -111,91 +203,86 @@ const MSGMain1545x960 = () => {
                         </linearGradient>
                         <linearGradient
                             id="paint1_linear_216_47"
-                            x1="12.5"
-                            y1="-14.5704"
-                            x2="1744.51"
-                            y2="-7.00114"
+                            x1="15"
+                            y1="-18"
+                            x2="1935"
+                            y2="-9"
                             gradientUnits="userSpaceOnUse"
                         >
-                            <stop offset="0.269231" stopColor="#002ED2" />
-                            <stop offset="0.735577" stopColor="#FF5900" />
+                            <stop offset="0.269231" stopColor="#00A651" />
+                            <stop offset="0.735577" stopColor="#D32F2F" />
                         </linearGradient>
                     </defs>
                 </svg>
             </div>
 
-            {/* Title and Live Trades pill */}
-            <div 
-                className="absolute top-[54px] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-                style={{ marginLeft: '5px' }}
-            >
-                <KalshiLogo color="white" height="97px" />
-                <div className="text-text-white text-[86px] font-extrabold tracking-tight">NEXT NYC MAYOR?</div>
-                <LiveTradesIndicator height={56} width={260} fontSize={28} />
-                <div 
-                    className="mt-6 overflow-hidden" 
-                    style={{ 
-                        marginLeft: '93px',
-                        maxHeight: '500px',
-                    }}
-                >
-                    <LiveTradesAnimation
-                        candidates={['MAMDANI', 'CUOMO']}
-                        tradesToDisplay={7}
-                        tradeOpacities={[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]}
-                        className="w-[480px]"
-                        listClassName="flex flex-col gap-[29px]"
-                        itemClassName="flex items-center gap-4 text-3xl font-semibold drop-shadow-sm"
-                        showSide={true}
-                        fontSize={36}
-                    />
-                </div>
-            </div>
 
             {/* Middle faded trades column */}
 
-            {/* Left odds block */}
-            <div className="absolute left-6 bottom-6 z-10">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-0">MAMDANI</div>
-                <div className="flex items-baseline gap-0">
+            {/* Left odds block - Florida */}
+            <div 
+                className="absolute left-[25%] top-[380px] z-10"
+                style={{
+                    transform: 'translateX(-50%)',
+                    textAlign: 'center',
+                }}
+            >
+                <div className="flex items-baseline justify-center gap-0">
                     <AnimatedCounter
-                        value={mamdani}
-                        includeDecimals={false}
-                        fontSize="200px"
-                        digitStyles={{
-                            lineHeight: 1,
-                            fontWeight: 'Bold',
-                        }}
+                        value={florida}
+                        fontSize="320px"
                         color="white"
-                        incrementColor="#00D4AA"
-                        decrementColor="#FF0000"
+                        incrementColor="white"
+                        decrementColor="white"
+                        includeDecimals={false}
+                        containerStyles={{
+                            fontWeight: 800,
+                            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                            lineHeight: 1,
+                        }}
                     />
-                    <div className="text-[200px] leading-none font-extrabold text-text-white tracking-tighter">%</div>
-                    <TriangleArrow color="#00D4AA" direction="up" className="" />
+                    <div className="text-[320px] leading-none font-extrabold text-text-white tracking-tight drop-shadow-lg">%</div>
+                </div>
+                <div className="mt-8 flex justify-center items-center" style={{ height: '300px' }}>
+                    <img src="/images/nyc-mayor/Miami Florida.svg" alt="Florida Logo" height="400" width="400" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
                 </div>
             </div>
 
-            {/* Right odds block */}
-            <div className="absolute right-6 bottom-6 z-10 text-right">
-                <div className="text-[80px] font-extrabold text-text-white tracking-wide leading-none mb-0">CUOMO</div>
-                <div className="flex items-baseline justify-end" style={{ gap: '0px' }}>
-                    <div style={{ marginRight: '-60px' }}>
-                        <TriangleArrow color="#D91616" direction="down" className="" />
-                    </div>
+            {/* Right odds block - Ole Miss */}
+            <div 
+                className="absolute right-[25%] top-[380px] z-10"
+                style={{
+                    transform: 'translateX(50%)',
+                    textAlign: 'center',
+                }}
+            >
+                <div className="flex items-baseline justify-center gap-0">
                     <AnimatedCounter
-                        value={cuomo}
-                        includeDecimals={false}
-                        fontSize="200px"
-                        digitStyles={{
-                            lineHeight: 1,
-                            fontWeight: 'Bold',
-                        }}
+                        value={oleMiss}
+                        fontSize="320px"
                         color="white"
-                        incrementColor="#00D4AA"
-                        decrementColor="#FF0000"
+                        incrementColor="white"
+                        decrementColor="white"
+                        includeDecimals={false}
+                        containerStyles={{
+                            fontWeight: 800,
+                            textShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                            lineHeight: 1,
+                        }}
                     />
-                    <div className="text-[200px] leading-none font-extrabold text-text-white tracking-tighter">%</div>
+                    <div className="text-[320px] leading-none font-extrabold text-text-white tracking-tight drop-shadow-lg">%</div>
                 </div>
+                <div className="mt-8 flex justify-center items-center" style={{ height: '300px', overflow: 'visible' }}>
+                    <img src="/images/nyc-mayor/Ole Miss Logo.svg" alt="Ole Miss Logo" height="180" width="550" style={{ filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+                </div>
+            </div>
+
+            {/* QR Code - Top Right */}
+            <div 
+                className="absolute top-[31px] right-[10px]"
+                style={{ zIndex: 10 }}
+            >
+                <img src="/images/nyc-mayor/5uVxJi.svg" alt="QR Code" width="250" height="250" />
             </div>
 
         </div>

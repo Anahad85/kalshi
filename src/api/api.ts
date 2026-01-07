@@ -8,21 +8,17 @@ export interface KalshiTrade {
     created_time: string;
 }
 
-// Get market odds - works everywhere (dev, Netlify, Cnario)
+// Get market odds - uses Vite proxy in dev to avoid CORS
 export const fetchMarketOdds = async (ticker: string): Promise<number | null> => {
     try {
         const hostname = window.location.hostname;
         let url: string;
         
-        // Localhost: use Vite proxy
+        // Localhost: use Vite proxy to avoid CORS
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             url = `/api/kalshi/markets/${ticker}`;
         }
-        // Netlify: use serverless function
-        else if (hostname.includes('netlify.app') || hostname.includes('netlify.live')) {
-            url = `/api/market-odds?ticker=${ticker}`;
-        }
-        // Cnario or other: direct API
+        // Production: direct API call (works from server-side or CORS-enabled environments)
         else {
             url = `https://api.elections.kalshi.com/trade-api/v2/markets/${ticker}`;
         }
@@ -30,12 +26,22 @@ export const fetchMarketOdds = async (ticker: string): Promise<number | null> =>
         const response = await fetch(url);
         
         if (!response.ok) {
+            console.error('API call failed:', response.status);
             return null;
         }
         
         const data = await response.json();
-        return data.market?.last_price ?? null;
+        
+        if (data.error) {
+            console.error('API error:', data.error);
+            return null;
+        }
+        
+        // last_price is in cents (0-100 scale = percentage)
+        const odds = data.market?.last_price ?? null;
+        return odds;
     } catch (error) {
+        console.error('Error fetching odds:', error);
         return null;
     }
 };

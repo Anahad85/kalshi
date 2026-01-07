@@ -272,7 +272,9 @@ export const LiveTradesAnimation = ({
                                         width: fontSize * 0.8,
                                         height: fontSize * 0.8,
                                         borderRadius: '50%',
-                                        background: `linear-gradient(to bottom, ${trade.pfpColor}, ${darkenColor(trade.pfpColor || '#000000', 0.2)})`,
+                                        background: trade.side === 'FLORIDA' 
+                                            ? 'linear-gradient(to bottom, #FA6400, #005030)' // Orange and green for Florida
+                                            : 'linear-gradient(to bottom, #CE1126, #8B0000)', // Red for Ole Miss
                                         border: '0.5px solid rgba(255, 255, 255, 0.3)',
                                         flexShrink: 0,
                                     }}
